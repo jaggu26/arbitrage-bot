@@ -7,9 +7,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Auth config
+// ── CONFIG ──────────────────────────────────────────────────────────────────────
+// Auth credentials
 const AUTH_USERNAME = process.env.AUTH_USERNAME || 'admin';
 const AUTH_PASSWORD = process.env.AUTH_PASSWORD || 'arb123456';
+
+// Exchange tokens & API keys
+const REZOREX_ACCESS = process.env.REZOREX_ACCESS_TOKEN || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZTA0ZDc2ZWY2OGVhMWUxY2E2NmE4MSIsInJvbGUiOiJ1c2VyIiwidG9rZW5UeXBlIjoiYWNjZXNzIiwiaWF0IjoxNzc3MDAyMjg4LCJleHAiOjE3NzcwMDI4ODh9.oQapQxuvX7gsmrISG2qC1Zk-m7bxrTxAto-_gRB7tl4';
+const REZOREX_REFRESH = process.env.REZOREX_REFRESH_TOKEN || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZTA0ZDc2ZWY2OGVhMWUxY2E2NmE4MSIsInJvbGUiOiJ1c2VyIiwidG9rZW5UeXBlIjoiYWNjZXNzIiwiaWF0IjoxNzc3MDAyMjg4LCJleHAiOjE3NzcwMDI4ODh9.oQapQxuvX7gsmrISG2qC1Zk-m7bxrTxAto-_gRB7tl4';
+const REZOREX_API_KEY = process.env.REZOREX_API_KEY || 'rzr_eaf1b99124cb761f193e2d980889d9003150b9a3cc42755d';
+const CRYPTOFORCE_API_KEY = process.env.CRYPTOFORCE_API_KEY || 'rzr_eaf1b99124cb761f193e2d980889d9003150b9a3cc42755d';
 
 // ── LOGIN API ────────────────────────────────────────────────────────────────
 app.post('/api/login', (req, res) => {
