@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ArbWatch — Multi-Exchange</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e1a;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;font-size:13px}
+
+/* ── Header ── */
+header{background:#0f1623;border-bottom:1px solid #1a2540;padding:11px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
+.logo{font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px}.logo span{color:#3b82f6}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;animation:pulse 2s infinite}
+.live-dot.dead{background:#ef4444;box-shadow:0 0 6px #ef4444;animation:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.ts{color:#475569;font-size:11px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:3px}
+.dot.g{background:#22c55e;box-shadow:0 0 5px #22c55e}.dot.r{background:#ef4444;box-shadow:0 0 5px #ef4444}.dot.y{background:#f59e0b;box-shadow:0 0 5px #f59e0b}
+.tok-stat{font-size:11px;color:#64748b;display:flex;align-items:center;gap:6px}
+.btn{border:none;padding:6px 13px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;transition:.15s}
+.btn-blue{background:#2563eb;color:#fff}.btn-blue:hover{background:#1d4ed8}
+.btn-green{background:#16a34a;color:#fff}.btn-green:hover{background:#15803d}
+.btn-outline{background:transparent;border:1px solid #1a2540;color:#64748b}.btn-outline:hover{border-color:#3b82f6;color:#e2e8f0}
+.icon-btn{background:none;border:1px solid #1a2540;color:#64748b;width:32px;height:32px;border-radius:7px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:.15s}
+.icon-btn:hover{background:#1a2540;color:#e2e8f0}
+
+/* ── Tabs ── */
+.tabs{display:flex;gap:2px;background:#0f1623;border-bottom:1px solid #1a2540;padding:0 18px}
+.tab{padding:10px 16px;font-size:12px;font-weight:700;color:#475569;cursor:pointer;border-bottom:2px solid transparent;transition:.15s}
+.tab.active{color:#3b82f6;border-bottom-color:#3b82f6}
+.tab:hover:not(.active){color:#94a3b8}
+.tab-content{display:none}.tab-content.active{display:block}
+
+/* ── Layout ── */
+main{max-width:1100px;margin:0 auto;padding:16px 14px;display:flex;flex-direction:column;gap:14px}
+
+/* ── NOW card ── */
+.now-card{border-radius:14px;padding:20px 22px}
+.now-card.profit{background:linear-gradient(135deg,#052e16 0%,#0a3d1a 100%);border:1px solid #16a34a}
+.now-card.neutral{background:#0f1623;border:1px solid #1a2540}
+.now-card.warn{background:linear-gradient(135deg,#1a1000,#2d1f00);border:1px solid #92400e}
+.now-label{font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#64748b;margin-bottom:8px}
+.now-title{font-size:18px;font-weight:800;margin-bottom:4px;line-height:1.3}
+.now-sub{font-size:12px;color:#94a3b8;margin-bottom:12px}
+.now-pills{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pill{padding:4px 12px;border-radius:12px;font-size:12px;font-weight:800}
+.pill-g{background:rgba(34,197,94,.18);color:#4ade80;border:1px solid rgba(34,197,94,.35)}
+.pill-r{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.25)}
+.pill-y{background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.25)}
+.pill-muted{background:#1a2540;color:#64748b}
+
+/* ── Alerts banner ── */
+.alert-bar{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:9px 14px;font-size:12px;color:#4ade80;display:none;align-items:center;gap:8px}
+.alert-bar.show{display:flex}
+.err-bar{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:10px;padding:9px 14px;font-size:12px;color:#fca5a5;display:none}
+.err-bar.show{display:block}
+
+/* ── Section label ── */
+.sec-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#334155;margin-bottom:8px}
+
+/* ── Exchange chips ── */
+.ex-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.ex-chip{padding:3px 9px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid}
+.chip-rzr{background:rgba(59,130,246,.1);color:#60a5fa;border-color:rgba(59,130,246,.25)}
+.chip-cfx{background:rgba(16,185,129,.1);color:#34d399;border-color:rgba(16,185,129,.25)}
+.chip-bnb{background:rgba(245,158,11,.1);color:#fbbf24;border-color:rgba(245,158,11,.25)}
+.chip-bbt{background:rgba(168,85,247,.1);color:#c084fc;border-color:rgba(168,85,247,.25)}
+.chip-mxc{background:rgba(239,68,68,.1);color:#f87171;border-color:rgba(239,68,68,.25)}
+
+/* ── Pair grid ── */
+.pair-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:8px}
+.pair-card{background:#0f1623;border:1px solid #1a2540;border-radius:10px;padding:11px 12px;transition:.15s}
+.pair-card:hover{border-color:#2563eb}
+.pair-card.opp{border-color:#16a34a;background:#071a0f}
+.pair-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.pair-name{font-weight:800;font-size:13px}
+.spread-tag{font-size:10px;font-weight:800;padding:2px 7px;border-radius:8px}
+.sp-g{background:rgba(34,197,94,.15);color:#4ade80}.sp-r{background:rgba(239,68,68,.1);color:#f87171}
+.price-rows{font-size:11px}
+.pr{display:flex;justify-content:space-between;padding:2px 0;border-radius:4px}
+.pr.best-buy{color:#60a5fa}.pr.best-sell{color:#4ade80}
+.pr-name{font-weight:700}.pr-val{font-family:monospace}
+.pair-dir{margin-top:6px;padding-top:5px;border-top:1px solid #1a2540;font-size:10px;color:#334155;text-align:center}
+.pair-dir.opp{color:#4ade80}
+
+/* ── Stats row ── */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.stat-box{background:#0f1623;border:1px solid #1a2540;border-radius:10px;padding:11px 13px}
+.stat-label{font-size:10px;color:#475569;text-transform:uppercase;font-weight:700;margin-bottom:3px}
+.stat-val{font-size:17px;font-weight:800}
+.v-g{color:#4ade80}.v-r{color:#f87171}.v-y{color:#fbbf24}.v-m{color:#94a3b8}.v-b{color:#60a5fa}
+
+/* ── Triangular section ── */
+.tri-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.tri-card{background:#0f1623;border:1px solid #1a2540;border-radius:10px;padding:11px 13px}
+.tri-card.opp{border-color:#16a34a;background:#071a0f}
+.tri-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.tri-label{font-size:12px;font-weight:700}
+.tri-sub{font-size:11px;color:#475569;margin-bottom:4px}
+.tri-pct{font-size:14px;font-weight:800}
+
+/* ── Funding rates ── */
+.funding-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
+.fund-card{background:#0f1623;border:1px solid #1a2540;border-radius:10px;padding:12px 14px}
+.fund-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.fund-sym{font-weight:800;font-size:13px}
+.fund-rate{font-size:13px;font-weight:800}
+.fund-info{font-size:11px;color:#64748b;line-height:1.6}
+.fund-strategy{margin-top:7px;padding:6px 8px;background:rgba(34,197,94,.07);border-radius:6px;font-size:10px;color:#4ade80;font-weight:700}
+
+/* ── History ── */
+.hist-list{display:flex;flex-direction:column;gap:4px;max-height:280px;overflow-y:auto}
+.hist-item{display:flex;align-items:center;gap:10px;background:#0f1623;border:1px solid #1a2540;border-radius:7px;padding:7px 10px;font-size:11px}
+.hist-pair{font-weight:800;color:#60a5fa;min-width:80px}
+.hist-pct{font-weight:800;color:#4ade80;min-width:60px}
+.hist-dir{color:#94a3b8;flex:1}
+.hist-ts{color:#334155;font-size:10px}
+
+/* ── Calculator ── */
+.calc-card{background:#0f1623;border:1px solid #1a2540;border-radius:12px;padding:16px}
+.calc-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.calc-input{background:#070a14;border:1px solid #1a2540;color:#e2e8f0;padding:8px 11px;border-radius:7px;font-size:14px;width:150px;outline:none}
+.calc-input:focus{border-color:#3b82f6}
+.calc-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.calc-box{background:#070a14;border-radius:8px;padding:10px 12px}
+.cb-label{font-size:10px;color:#475569;text-transform:uppercase;font-weight:700;margin-bottom:3px}
+.cb-val{font-size:16px;font-weight:800}
+
+/* ── Settings ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;display:none;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.settings-panel{background:#0f1623;border:1px solid #1a2540;border-radius:16px;padding:22px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto}
+.sp-title{font-size:15px;font-weight:800;margin-bottom:3px}
+.sp-sub{font-size:11px;color:#475569;margin-bottom:16px}
+.ex-section{margin-bottom:14px;border:1px solid #1a2540;border-radius:9px;padding:12px}
+.ex-sec-label{font-weight:700;font-size:12px;margin-bottom:9px;display:flex;align-items:center;gap:6px}
+.field{margin-bottom:9px}
+.field label{display:block;font-size:10px;color:#64748b;font-weight:800;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.field textarea{width:100%;background:#070a14;border:1px solid #1a2540;color:#e2e8f0;padding:7px 9px;border-radius:7px;font-size:10px;font-family:monospace;resize:vertical;min-height:50px;outline:none;line-height:1.5}
+.field textarea:focus{border-color:#3b82f6}
+.field textarea::placeholder{color:#1e3050}
+.save-row{display:flex;align-items:center;gap:8px}
+.save-st{font-size:11px;color:#4ade80}.save-st.e{color:#f87171}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#070a14}::-webkit-scrollbar-thumb{background:#1a2540;border-radius:2px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Arb<span>Watch</span></div>
+  <div class="hdr-right">
+    <span class="live-dot dead" id="liveDot" title="SSE stream status"></span>
+    <div class="tok-stat">
+      <span><span class="dot y" id="dotRzr"></span>Rezorex</span>
+      <span><span class="dot y" id="dotCfx"></span>CFX</span>
+    </div>
+    <span class="ts" id="ts">Connecting…</span>
+    <button class="icon-btn" onclick="openSettings()" title="Token Settings">⚙</button>
+  </div>
+</header>
+
+<!-- Tabs -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('cross')">Cross-Exchange</div>
+  <div class="tab" onclick="switchTab('tri')">Triangular Arb</div>
+  <div class="tab" onclick="switchTab('funding')">Funding Rates</div>
+  <div class="tab" onclick="switchTab('history')">History</div>
+  <div class="tab" onclick="switchTab('calc')">Calculator</div>
+</div>
+
+<main>
+
+<div class="err-bar" id="errBar"></div>
+<div class="alert-bar" id="alertBar">
+  <span>🎯</span><span id="alertMsg"></span>
+  <button class="btn btn-green" style="padding:3px 10px;font-size:11px;margin-left:auto" onclick="requestNotifPerm()">Enable alerts</button>
+</div>
+
+<!-- ─── Tab: Cross-Exchange ─── -->
+<div class="tab-content active" id="tab-cross">
+
+  <!-- Exchange row -->
+  <div class="ex-row" id="exRow">
+    <span style="font-size:10px;color:#334155;font-weight:700;text-transform:uppercase">Monitoring:</span>
+    <span class="ex-chip chip-rzr">Gate.io (Rezorex)</span>
+    <span class="ex-chip chip-cfx">KuCoin (CFX)</span>
+    <span class="ex-chip chip-bnb">Binance</span>
+    <span class="ex-chip chip-bbt">Bybit</span>
+    <span class="ex-chip chip-mxc">MEXC</span>
+  </div>
+
+  <!-- NOW card -->
+  <div class="now-card neutral" id="nowCard">
+    <div class="now-label">Best Opportunity Right Now</div>
+    <div class="now-title" style="color:#334155">Connecting to live stream…</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow">
+    <div class="stat-box"><div class="stat-label">Pairs Scanned</div><div class="stat-val v-b" id="statPairs">—</div></div>
+    <div class="stat-box"><div class="stat-label">Best Spread</div><div class="stat-val v-m" id="statBest">—</div></div>
+    <div class="stat-box"><div class="stat-label">Opps Today</div><div class="stat-val v-g" id="statOpps">0</div></div>
+    <div class="stat-box"><div class="stat-label">Exchanges Live</div><div class="stat-val v-b" id="statEx">5</div></div>
+  </div>
+
+  <div class="sec-label">All Pairs — Best Price Per Exchange</div>
+  <div class="pair-grid" id="pairGrid">
+    <div style="grid-column:1/-1;color:#334155;padding:20px;text-align:center">Loading…</div>
+  </div>
+</div>
+
+<!-- ─── Tab: Triangular ─── -->
+<div class="tab-content" id="tab-tri">
+  <div class="now-card warn" style="margin-bottom:14px">
+    <div class="now-label">About Triangular Arbitrage</div>
+    <div class="now-title" style="font-size:15px">USDT → Coin A → Coin B → USDT (3-leg loop, same exchange)</div>
+    <div class="now-sub" style="margin-bottom:8px">Requires no crypto transfer — all 3 legs on 1 exchange. Needs execution within ~500ms. On liquid major pairs, the market is too efficient. Look for positive values — they signal a temporary pricing discrepancy.</div>
+    <div class="now-pills">
+      <span class="pill pill-muted">Binance fee: 0.10% × 3 = 0.30% hurdle</span>
+      <span class="pill pill-muted">MEXC fee: 0.02% × 3 = 0.06% hurdle</span>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px" id="triContainer">
+    <div>
+      <div class="sec-label">Binance Triangular (0.1% fee)</div>
+      <div class="tri-grid" id="triGridBinance">
+        <div style="color:#334155;padding:20px;text-align:center;grid-column:1/-1">Loading…</div>
+      </div>
+    </div>
+    <div>
+      <div class="sec-label">MEXC Triangular (0.02% fee)</div>
+      <div class="tri-grid" id="triGridMexc">
+        <div style="color:#334155;padding:20px;text-align:center;grid-column:1/-1">Loading…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Tab: Funding Rates ─── -->
+<div class="tab-content" id="tab-funding">
+  <div class="now-card warn" style="margin-bottom:14px">
+    <div class="now-label">Funding Rate Arbitrage</div>
+    <div class="now-title" style="font-size:15px">Long Spot + Short Perpetual = Earn Funding Rate (Delta-Neutral)</div>
+    <div class="now-sub">When funding rate is positive, longs pay shorts every 8h. Strategy: buy spot, short perpetual on same exchange. Net position = 0 market risk. Earns the funding rate as guaranteed income.</div>
+    <div class="now-pills">
+      <span class="pill pill-y">Pays every 8h (3× daily)</span>
+      <span class="pill pill-muted">Need: spot account + futures account</span>
+      <span class="pill pill-muted">Risk: rate can flip negative</span>
+    </div>
+  </div>
+  <div class="sec-label">Live Funding Rates — Bybit Perpetuals</div>
+  <div class="funding-grid" id="fundingGrid">
+    <div style="color:#334155;padding:20px;text-align:center;grid-column:1/-1">Loading…</div>
+  </div>
+</div>
+
+<!-- ─── Tab: History ─── -->
+<div class="tab-content" id="tab-history">
+  <div class="sec-label">Opportunity Log — last 50 events where spread &gt; 0.05%</div>
+  <div class="hist-list" id="histList">
+    <div style="color:#334155;padding:20px;text-align:center">No opportunities recorded yet. Dashboard scans every 5 seconds.</div>
+  </div>
+</div>
+
+<!-- ─── Tab: Calculator ─── -->
+<div class="tab-content" id="tab-calc">
+  <div class="sec-label">Profit Calculator</div>
+  <div class="calc-card">
+    <div class="calc-row">
+      <div style="color:#64748b">Invest</div>
+      <input class="calc-input" type="number" id="calcAmt" value="10000" min="1" oninput="calcProfit()"/>
+      <div style="color:#64748b">₹ in best opportunity:</div>
+    </div>
+    <div class="calc-results" id="calcResults">
+      <div class="calc-box"><div class="cb-label">Gross profit</div><div class="cb-val v-m">—</div></div>
+      <div class="calc-box"><div class="cb-label">Transfer fee</div><div class="cb-val v-m">—</div></div>
+      <div class="calc-box"><div class="cb-label">Net profit</div><div class="cb-val v-m">—</div></div>
+      <div class="calc-box"><div class="cb-label">Min to profit</div><div class="cb-val v-m">—</div></div>
+    </div>
+
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid #1a2540">
+      <div class="sec-label">Funding Rate Calculator (Delta-Neutral)</div>
+      <div class="calc-row" style="margin-bottom:8px">
+        <div style="color:#64748b">Capital each side:</div>
+        <input class="calc-input" type="number" id="fundCalcAmt" value="10000" oninput="calcFunding()"/>
+        <div style="color:#64748b">₹ (spot + futures)</div>
+      </div>
+      <div class="calc-results" id="fundCalcResults">
+        <div class="calc-box"><div class="cb-label">Daily profit (est.)</div><div class="cb-val v-m">—</div></div>
+        <div class="calc-box"><div class="cb-label">Monthly profit</div><div class="cb-val v-m">—</div></div>
+        <div class="calc-box"><div class="cb-label">Annual yield</div><div class="cb-val v-m">—</div></div>
+        <div class="calc-box"><div class="cb-label">Risk level</div><div class="cb-val v-y">Low</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Strategy guide -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+    <div class="stat-box" style="padding:14px">
+      <div class="stat-label" style="margin-bottom:8px">Strategy 1 — Cross-Exchange (Best for you)</div>
+      <div style="font-size:11px;color:#94a3b8;line-height:1.7">
+        You own Rezorex &amp; CFX → internal transfers possible (no blockchain wait).<br>
+        Gate.io vs KuCoin diverge 0.3–1.5% during volatile markets.<br>
+        <strong style="color:#4ade80">Target: 2–5 trades/day × 0.3% = ₹60–₹150 per ₹10k</strong>
+      </div>
+    </div>
+    <div class="stat-box" style="padding:14px">
+      <div class="stat-label" style="margin-bottom:8px">Strategy 2 — Funding Rate (Guaranteed low income)</div>
+      <div style="font-size:11px;color:#94a3b8;line-height:1.7">
+        Long BTC spot on Bybit + Short BTC perpetual on Bybit.<br>
+        Earn ~0.01% per 8h = 0.03% daily = ~11% APY.<br>
+        <strong style="color:#fbbf24">On ₹20k total: ₹6/day guaranteed. Scales with capital.</strong>
+      </div>
+    </div>
+    <div class="stat-box" style="padding:14px">
+      <div class="stat-label" style="margin-bottom:8px">Strategy 3 — Triangular (Requires WebSocket infra)</div>
+      <div style="font-size:11px;color:#94a3b8;line-height:1.7">
+        USDT→BNB→ETH→USDT loop, 0.06% hurdle on MEXC.<br>
+        Profitable when price discrepancy &gt; 0.06% (happens briefly).<br>
+        <strong style="color:#f87171">Needs &lt;500ms execution — REST API too slow. Need WSS bot.</strong>
+      </div>
+    </div>
+    <div class="stat-box" style="padding:14px">
+      <div class="stat-label" style="margin-bottom:8px">Strategy 4 — Expand Pair Coverage</div>
+      <div style="font-size:11px;color:#94a3b8;line-height:1.7">
+        We now scan 25 pairs (was 8). Smaller coins like NEAR, APT, INJ have wider spreads between Gate.io and KuCoin.<br>
+        <strong style="color:#60a5fa">More pairs = more chances to catch divergence during volatility.</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- Settings -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeSettings()">
+  <div class="settings-panel">
+    <div class="sp-title">⚙ Exchange Tokens</div>
+    <div class="sp-sub">Paste tokens for your platforms. Stored in-memory only — resets on server restart.</div>
+
+    <div class="ex-section">
+      <div class="ex-sec-label"><span class="dot g"></span> Rezorex</div>
+      <div class="field"><label>Access Token</label><textarea id="rzrAccess" placeholder="eyJhbGciOi…" rows="2"></textarea></div>
+      <div class="field"><label>Refresh Token</label><textarea id="rzrRefresh" placeholder="eyJhbGciOi…" rows="2"></textarea></div>
+      <div class="save-row">
+        <button class="btn btn-green" onclick="saveTokens('rezorex')">Save Rezorex</button>
+        <span class="save-st" id="rzrStatus"></span>
+      </div>
+    </div>
+
+    <div class="ex-section">
+      <div class="ex-sec-label"><span class="dot y"></span> Cryptoforce (CFX)</div>
+      <div class="field"><label>Access Token</label><textarea id="cfxAccess" placeholder="eyJhbGciOi…" rows="2"></textarea></div>
+      <div class="field"><label>Refresh Token</label><textarea id="cfxRefresh" placeholder="eyJhbGciOi…" rows="2"></textarea></div>
+      <div class="save-row">
+        <button class="btn btn-green" onclick="saveTokens('cfx')">Save CFX</button>
+        <span class="save-st" id="cfxStatus"></span>
+      </div>
+    </div>
+
+    <div style="text-align:right;margin-top:8px">
+      <button class="btn btn-outline" onclick="closeSettings()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const INR = 85;
+const TRANSFER_FEE_INR = 50;
+
+const EX_COLOR = { Rezorex:'#60a5fa', CFX:'#34d399', Binance:'#fbbf24', Bybit:'#c084fc', MEXC:'#f87171' };
+function exC(n){ return EX_COLOR[n]||'#94a3b8'; }
+function exTag(n){ return `<span style="color:${exC(n)};font-weight:800">${n}</span>`; }
+
+let lastData = null;
+let oppCount = 0;
+let fundingRates = [];
+
+// ─── Tabs ───────────────────────────────────────────────────────────────────
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const ids = ['cross','tri','funding','history','calc'];
+    t.classList.toggle('active', ids[i] === id);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+}
+
+// ─── SSE Stream ──────────────────────────────────────────────────────────────
+const source = new EventSource('/api/stream');
+const liveDot = document.getElementById('liveDot');
+
+source.onopen = () => { liveDot.className = 'live-dot'; };
+source.onerror = () => { liveDot.className = 'live-dot dead'; document.getElementById('ts').textContent = 'Stream error — retrying'; };
+
+source.onmessage = e => {
+  const data = JSON.parse(e.data);
+  lastData = data;
+  document.getElementById('ts').textContent = '5s live · ' + new Date(data.ts).toLocaleTimeString();
+  renderAll(data);
+};
+
+// ─── Token dots ──────────────────────────────────────────────────────────────
+async function loadTokenStatus() {
+  try {
+    const tok = await fetch('/api/tokens').then(r => r.json());
+    setDot('dotRzr', tok.rezorex);
+    setDot('dotCfx', tok.cfx);
+  } catch {}
+}
+function setDot(id, t) {
+  const el = document.getElementById(id);
+  el.className = 'dot';
+  if (!t.hasAccess) { el.classList.add('r'); return; }
+  if (t.lastError?.includes('expired')) { el.classList.add('r'); return; }
+  if (t.remainingSeconds < 120) { el.classList.add('y'); return; }
+  el.classList.add('g');
+}
+loadTokenStatus();
+setInterval(loadTokenStatus, 30000);
+
+// ─── Main render ─────────────────────────────────────────────────────────────
+function renderAll(data) {
+  if (!data.success) { document.getElementById('errBar').textContent = '⚠ ' + data.error; document.getElementById('errBar').classList.add('show'); return; }
+  document.getElementById('errBar').classList.remove('show');
+
+  const rows = data.rows || [];
+  const best = rows.find(r => !r.sameExchange) || rows[0];
+
+  // Stats
+  document.getElementById('statPairs').textContent = rows.length;
+  document.getElementById('statBest').textContent = best ? (best.bestPct >= 0 ? '+' : '') + best.bestPct.toFixed(3) + '%' : '—';
+  document.getElementById('statOpps').textContent = oppCount + (data.history?.length || 0);
+
+  renderNowCard(best);
+  renderPairGrid(rows);
+  renderTriangular(data.triangular);
+  renderFunding(data.funding || []);
+  renderHistory(data.history || []);
+  calcProfit();
+  calcFunding();
+
+  // Alert
+  if (best && best.bestPct > 0.05 && !best.sameExchange) {
+    const msg = `${best.pair.replace('_','/')} +${best.bestPct.toFixed(3)}% — Buy ${best.buyOn} → Sell ${best.sellOn}`;
+    document.getElementById('alertMsg').textContent = msg;
+    document.getElementById('alertBar').classList.add('show');
+    if (Notification.permission === 'granted') {
+      new Notification('ArbWatch — Opportunity!', { body: msg, icon: '/favicon.ico' });
+    }
+  } else {
+    document.getElementById('alertBar').classList.remove('show');
+  }
+}
+
+// ─── NOW card ────────────────────────────────────────────────────────────────
+function renderNowCard(best) {
+  const card = document.getElementById('nowCard');
+  if (!best || best.sameExchange || best.bestPct < 0.05) {
+    card.className = 'now-card neutral';
+    const sp = best ? (best.bestPct >= 0 ? '+' : '') + best.bestPct.toFixed(3) + '%' : '—';
+    card.innerHTML = `
+      <div class="now-label">Best Opportunity Right Now</div>
+      <div class="now-title" style="color:#475569">No profitable spread detected</div>
+      <div class="now-sub">Market is balanced across 5 exchanges. Monitoring 25 pairs every 5 seconds…</div>
+      <div class="now-pills"><span class="pill pill-muted">Best spread: ${sp}</span></div>`;
+    return;
+  }
+  card.className = 'now-card profit';
+  const amt = parseFloat(document.getElementById('calcAmt').value) || 10000;
+  const net = amt * (best.bestPct/100) - TRANSFER_FEE_INR;
+  card.innerHTML = `
+    <div class="now-label">Best Opportunity Right Now</div>
+    <div class="now-title">
+      ${best.bestPct > 0.3 ? '🟢' : '🟡'} Buy ${best.pair.replace('_','/')} on ${exTag(best.buyOn)} → Sell on ${exTag(best.sellOn)}
+    </div>
+    <div class="now-sub">Buy @ ₹${fmt(best.buyPrice*INR)} &nbsp;·&nbsp; Sell @ ₹${fmt(best.sellPrice*INR)} &nbsp;·&nbsp; ${best.sourceCount} exchanges compared</div>
+    <div class="now-pills">
+      <span class="pill pill-g">+${best.bestPct.toFixed(3)}% spread</span>
+      ${net > 0 ? `<span class="pill pill-g">₹${net.toFixed(0)} net profit on ₹${amt.toLocaleString('en-IN')}</span>` : `<span class="pill pill-r">Need larger capital (spread exists but fee absorbs profit on this amount)</span>`}
+    </div>`;
+}
+
+// ─── Pair grid ───────────────────────────────────────────────────────────────
+function renderPairGrid(rows) {
+  const grid = document.getElementById('pairGrid');
+  if (!rows.length) { grid.innerHTML = '<div style="color:#334155;padding:20px;text-align:center">No data</div>'; return; }
+  const best = rows.find(r => !r.sameExchange && r.bestPct > 0.05);
+
+  grid.innerHTML = rows.map(r => {
+    const isOpp = !r.sameExchange && r.bestPct > 0.05;
+    const sp = (r.bestPct >= 0 ? '+' : '') + r.bestPct.toFixed(3) + '%';
+    const exNames = Object.keys(r.prices||{});
+    const netAsks = exNames.map(n => ({n, v: r.prices[n].ask*(1+r.prices[n].buyFee)})).sort((a,b)=>a.v-b.v);
+    const netBids = exNames.map(n => ({n, v: r.prices[n].bid*(1-r.prices[n].sellFee)})).sort((a,b)=>b.v-a.v);
+    const bBuyEx = netAsks[0]?.n, bSellEx = netBids[0]?.n;
+
+    const priceRows = exNames.map(n => {
+      const p = r.prices[n];
+      const mid = (p.bid+p.ask)/2*INR;
+      const isBB = n===bBuyEx, iBS = n===bSellEx;
+      return `<div class="pr ${isBB?'best-buy':iBS?'best-sell':''}">
+        <span class="pr-name" style="color:${exC(n)}">${n}</span>
+        <span class="pr-val">₹${fmt(mid)}</span>
+      </div>`;
+    }).join('');
+
+    return `<div class="pair-card ${isOpp?'opp':''}">
+      <div class="pair-top">
+        <span class="pair-name">${r.pair.replace('_','/')}</span>
+        <span class="spread-tag ${r.bestPct>0.05&&!r.sameExchange?'sp-g':'sp-r'}">${sp}</span>
+      </div>
+      <div class="price-rows">${priceRows}</div>
+      <div class="pair-dir ${isOpp?'opp':''}">${isOpp ? `↓ Buy ${r.buyOn} → ↑ Sell ${r.sellOn}` : '— no opportunity —'}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Triangular arb ──────────────────────────────────────────────────────────
+function renderTriangular(tri) {
+  if (!tri) return;
+  renderTriGrid('triGridBinance', tri.binance||[], 'Binance', 0.001);
+  renderTriGrid('triGridMexc', tri.mexc||[], 'MEXC', 0.0002);
+}
+function renderTriGrid(id, items, exchange, fee) {
+  const grid = document.getElementById(id);
+  if (!items.length) { grid.innerHTML = '<div style="color:#334155;padding:14px;text-align:center">No data (cross pairs may not be available)</div>'; return; }
+  const hurdle = fee * 3 * 100;
+  grid.innerHTML = items.map(t => `
+    <div class="tri-card ${t.profitable?'opp':''}">
+      <div class="tri-top">
+        <span class="tri-label" style="color:${exC(exchange)}">${t.label}</span>
+        <span class="tri-pct ${t.profitable?'v-g':'v-r'}">${t.pct>=0?'+':''}${t.pct.toFixed(4)}%</span>
+      </div>
+      <div class="tri-sub">Hurdle: ${hurdle.toFixed(2)}% · 3 trades on ${exchange}</div>
+      ${t.profitable ? '<div style="font-size:10px;color:#4ade80;font-weight:700">⚡ ACT FAST — window &lt;1s</div>' : ''}
+    </div>`).join('');
+}
+
+// ─── Funding rates ───────────────────────────────────────────────────────────
+function renderFunding(rates) {
+  fundingRates = rates;
+  const grid = document.getElementById('fundingGrid');
+  if (!rates.length) {
+    grid.innerHTML = '<div style="color:#334155;padding:20px;text-align:center">Funding rate data unavailable. Bybit API may be throttling.</div>';
+    return;
+  }
+  grid.innerHTML = rates.map(r => {
+    const col = Math.abs(r.rate8h) > 0.02 ? 'v-g' : r.rate8h < 0 ? 'v-r' : 'v-y';
+    return `<div class="fund-card">
+      <div class="fund-top">
+        <span class="fund-sym">${r.symbol}</span>
+        <span class="fund-rate ${col}">${r.rate8h>=0?'+':''}${r.rate8h.toFixed(4)}%/8h</span>
+      </div>
+      <div class="fund-info">
+        Daily rate: <strong>${r.rateDaily>=0?'+':''}${r.rateDaily.toFixed(4)}%</strong><br>
+        Annual yield: <strong>${r.rateAnnual.toFixed(2)}% APY</strong><br>
+        Direction: ${r.direction}
+      </div>
+      <div class="fund-strategy">▶ ${r.strategy}</div>
+    </div>`;
+  }).join('');
+  calcFunding();
+}
+
+// ─── History ────────────────────────────────────────────────────────────────
+function renderHistory(hist) {
+  const list = document.getElementById('histList');
+  if (!hist.length) {
+    list.innerHTML = '<div style="color:#334155;padding:20px;text-align:center">No opportunities recorded yet. Watching every 5s…</div>';
+    return;
+  }
+  list.innerHTML = hist.map(h => `
+    <div class="hist-item">
+      <span class="hist-pair">${h.pair?.replace('_','/')}</span>
+      <span class="hist-pct">+${h.pct?.toFixed(3)}%</span>
+      <span class="hist-dir">${h.buyOn} → ${h.sellOn}</span>
+      <span class="hist-ts">${new Date(h.ts).toLocaleTimeString()}</span>
+    </div>`).join('');
+}
+
+// ─── Calculator ──────────────────────────────────────────────────────────────
+function calcProfit() {
+  const amt = parseFloat(document.getElementById('calcAmt').value)||0;
+  const el = document.getElementById('calcResults');
+  if (!lastData?.rows?.length) return;
+  const best = lastData.rows.find(r=>!r.sameExchange)||lastData.rows[0];
+  const pct = best.bestPct;
+  const gross = amt*(pct/100);
+  const net = gross - TRANSFER_FEE_INR;
+  const minP = pct > 0 ? Math.ceil(TRANSFER_FEE_INR/(pct/100)) : null;
+  el.innerHTML = `
+    <div class="calc-box"><div class="cb-label">Gross profit</div><div class="cb-val ${gross>=0?'v-g':'v-r'}">₹${gross.toFixed(2)}</div></div>
+    <div class="calc-box"><div class="cb-label">Transfer fee (est.)</div><div class="cb-val v-m">₹${TRANSFER_FEE_INR}</div></div>
+    <div class="calc-box"><div class="cb-label">Net profit</div><div class="cb-val ${net>=0?'v-g':'v-r'}">₹${net.toFixed(2)}</div></div>
+    <div class="calc-box"><div class="cb-label">Min to profit</div><div class="cb-val ${minP?'v-m':'v-r'}">${minP?'₹'+minP.toLocaleString('en-IN'):'No opp'}</div></div>`;
+  if (lastData) renderNowCard(lastData.rows.find(r=>!r.sameExchange)||lastData.rows[0]);
+}
+
+function calcFunding() {
+  const amt = parseFloat(document.getElementById('fundCalcAmt').value)||0;
+  const el = document.getElementById('fundCalcResults');
+  const best = fundingRates[0];
+  if (!best) return;
+  const dailyPct = Math.abs(best.rateDaily)/100;
+  const daily = amt * dailyPct;
+  const monthly = daily * 30;
+  const annual = (Math.abs(best.rateAnnual)).toFixed(2);
+  el.innerHTML = `
+    <div class="calc-box"><div class="cb-label">Daily profit (est.)</div><div class="cb-val v-g">₹${daily.toFixed(2)}</div></div>
+    <div class="calc-box"><div class="cb-label">Monthly profit</div><div class="cb-val v-g">₹${monthly.toFixed(0)}</div></div>
+    <div class="calc-box"><div class="cb-label">Annual yield</div><div class="cb-val v-b">${annual}% APY</div></div>
+    <div class="calc-box"><div class="cb-label">Risk level</div><div class="cb-val v-y">Low</div></div>`;
+}
+
+function fmt(n){
+  if(n>=1e6) return (n/1e6).toFixed(2)+'M';
+  if(n>=1000) return n.toLocaleString('en-IN',{maximumFractionDigits:0});
+  return n.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+// ─── Notifications ───────────────────────────────────────────────────────────
+async function requestNotifPerm() {
+  const r = await Notification.requestPermission();
+  if (r === 'granted') {
+    new Notification('ArbWatch', { body: 'Alerts enabled! You will be notified of opportunities.' });
+  }
+}
+
+// ─── Settings ────────────────────────────────────────────────────────────────
+function openSettings(){ document.getElementById('overlay').classList.add('open'); }
+function closeSettings(){ document.getElementById('overlay').classList.remove('open'); }
+
+async function saveTokens(exchange) {
+  const isR = exchange==='rezorex';
+  const at = document.getElementById(isR?'rzrAccess':'cfxAccess').value.trim();
+  const rt = document.getElementById(isR?'rzrRefresh':'cfxRefresh').value.trim();
+  const st = document.getElementById(isR?'rzrStatus':'cfxStatus');
+  if(!at&&!rt){ st.className='save-st e'; st.textContent='Paste at least one token'; return; }
+  st.className='save-st'; st.textContent='Saving…';
+  try {
+    const body={exchange};
+    if(at) body.accessToken=at;
+    if(rt) body.refreshToken=rt;
+    const r = await fetch('/api/tokens/set',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json());
+    if(r.success){ st.textContent='✓ Saved! '+Math.floor((r.remainingSeconds||0)/60)+'m left'; document.getElementById(isR?'rzrAccess':'cfxAccess').value=''; document.getElementById(isR?'rzrRefresh':'cfxRefresh').value=''; setTimeout(()=>{st.textContent=''},4000); loadTokenStatus(); }
+    else { st.className='save-st e'; st.textContent=r.error||'Failed'; }
+  } catch { st.className='save-st e'; st.textContent='Network error'; }
+}
+</script>
+</body>
+</html>
