@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: arbitrage-bot
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: AUTH_USERNAME
+        value: admin
+      - key: AUTH_PASSWORD
+        value: arb123456
+      - key: PORT
+        value: 3000
